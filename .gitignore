@@ -11,14 +11,14 @@ __pycache__/
 *.db-shm
 *.db-wal
 
-# Generated demo data
-test_reports/*.csv
-test_reports/archive/*.csv
-workflow/production.db
-workflow/production.db-shm
-workflow/production.db-wal
-workflow/reports/stat_report_*.html
-workflow/reports/latest.html
+# Generated demo data (inside project_stat/)
+project_stat/test_reports/*.csv
+project_stat/test_reports/archive/*.csv
+project_stat/workflow/production.db
+project_stat/workflow/production.db-shm
+project_stat/workflow/production.db-wal
+project_stat/workflow/reports/stat_report_*.html
+project_stat/workflow/reports/latest.html
 
 # Logs
 *.log
@@ -30,3 +30,7 @@ Thumbs.db
 
 # Local secrets
 .env
+
+# Reference report (generated, not needed for the stand)
+infographic/stat_report_*.html
+project_stat/infographic/stat_report_*.html

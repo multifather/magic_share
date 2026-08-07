@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # magic_share / run.sh — launcher for macOS & Linux
-# Mirrors run.bat: hidden server + visible watcher + visible generator + file
-# manager + default browser, then 2x2 window arrangement (macOS via layout_mac.scpt).
+# Mirrors run.bat. This file lives in repo root; the stand code is in
+# project_stat/. Runs the demo stand: hidden server + visible watcher +
+# visible generator + file manager + default browser, then 2x2 arrange.
 set -u
-cd "$(dirname "$0")/script" || exit 1
+# repo root = parent of this script's dir; stand is in project_stat/
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT/project_stat/script" || exit 1
 
-LOG="$(dirname "$0")/run_all_diag.log"
+LOG="$ROOT/run_all_diag.log"
 : > "$LOG"
 echo "[$(date)] run.sh started; cwd=$(pwd)" >> "$LOG"
 
@@ -17,7 +20,7 @@ if [ -z "$PY" ]; then
 fi
 echo "[$(date)] python=$PY" >> "$LOG"
 
-# --- kill any previous stand (match our window titles) ---
+# --- kill any previous stand (match our window titles / processes) ---
 pkill -f "watcher.py --watch" 2>/dev/null || true
 pkill -f "gen_test_data.py --interactive" 2>/dev/null || true
 pkill -f "server.py" 2>/dev/null || true
@@ -36,7 +39,6 @@ sleep 1
 
 # --- launch WATCHER (new terminal window) ---
 if command -v osascript >/dev/null 2>&1; then
-  # macOS
   osascript -e "tell app \"Terminal\" to do script \"cd $(pwd) && $PY watcher.py --watch\""
 elif command -v gnome-terminal >/dev/null 2>&1; then
   gnome-terminal -- bash -c "$PY watcher.py --watch; exec bash"
@@ -65,7 +67,7 @@ sleep 1
 # --- arrange 2x2 (macOS via AppleScript; Linux skipped, manual arrange) ---
 sleep 3
 if command -v osascript >/dev/null 2>&1; then
-  osascript "$(dirname "$0")/layout_mac.scpt" >> "$LOG" 2>&1 || true
+  osascript "$ROOT/layout_mac.scpt" >> "$LOG" 2>&1 || true
 fi
 
 echo "[$(date)] windows placed. Generation runs in the GENERATOR terminal." | tee -a "$LOG"
@@ -73,6 +75,5 @@ echo
 echo "  Demo stand ready. Generation runs in the GENERATOR terminal; watcher auto-processes."
 echo "  Press [N] for new data, [E] to exit."
 echo "  Log: $LOG"
-# keep this shell alive briefly so the message is visible, then exit
 sleep 2
 exit 0
