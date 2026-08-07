@@ -164,19 +164,16 @@ POLL_INTERVAL_SEC = 2.0      # период опроса папки test_reports
 AI_MODE = "local"
 AI_BASE_URL = "http://127.0.0.1:1234/v1"   # LM Studio, OpenAI-совместимый
 # ──────────────────────────────────────────────────────────────────────
-# ВНИМАНИЕ: для magic_share используется ЛЁГКАЯ модель Qwen3.5-1.5B
-# (в ~6 раз меньше оригинальной 9b). Она СЛАБЕЕ держит длинные инструкции —
-# поэтому ai_client.py специально упрощён под неё (короткий промпт,
-# пониженная temperature, жёсткие ограничения токенов). 1.5B НЕ считает числа
-# (расчёт всё равно детерминированный, в analytics.py), но её текстовый вывод
-# проще — это осознанный компромисс «зрелища» vs точности формулировок.
-# Чтобы вернуть 9b: замени имя модели на "qwen/qwen3.5-9b" и подними
-# AI_TIMEOUT/AI_MAX_TOKENS (см. ниже).
+# ХАРДКОД magic_share: локальная модель = Qwen2.5-1.5B-Instruct (GGUF q4_k_m)
+# из репо Qwen/Qwen2.5-1.5B-Instruct-GGUF. Модель НЕ reasoning — мышление
+# отсутствует по дизайну, флаг enable_thinking:false оставлен для совместимости.
+# LM Studio регистрирует GGUF под id "qwen2.5-1.5b-instruct" (ниже в AI_MODEL_*).
+# Скачать в LM Studio → "Search models" → вставить URL ниже (Download):
+LM_STUDIO_MODEL_DOWNLOAD_URL = "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"
 # ──────────────────────────────────────────────────────────────────────
-AI_MODEL_ANALYTICS = "qwen/qwen3.5-3b"     # СТАВЬ МОДЕЛЬ 1.5B В LM STUDIO: qwen/qwen3.5-1.5b
-                                           # (имя зависит от провайдера загрузки; см. README).
-AI_MODEL_ANALYTICS_FALLBACK = None         # fallback ОТКЛЮЧЕН. Вернуть: прописать имя модели.
-AI_MODEL_CHAT = "qwen/qwen3.5-3b"          # то же, что AI_MODEL_ANALYTICS
+AI_MODEL_ANALYTICS = "qwen2.5-1.5b-instruct"   # ХАРДКОД: id модели в LM Studio
+AI_MODEL_ANALYTICS_FALLBACK = None             # fallback отключён
+AI_MODEL_CHAT = "qwen2.5-1.5b-instruct"        # то же, что AI_MODEL_ANALYTICS
 AI_TIMEOUT = 120                          # лёгкая модель отвечает быстрее 9b; 120 с с запасом
 AI_FALLBACK_ATTEMPTS = 1                   # одна попытка (fallback отключён)
 AI_ENABLE_THINKING = False                # Qwen3.5 reasoning OFF: быстрее + точнее числа

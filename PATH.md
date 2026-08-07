@@ -54,10 +54,11 @@
 - **Вводные данные** = генератор `gen_test_data.py --seed 42` (детерминированно
   40 CSV, 10 партий). Watcher «оживает» на живую генерацию, как в цеху.
   Никаких внешних файлов не нужно.
-- **Модель**: `qwen/qwen3.5-1.5B` (лёгкая) вместо оригинальной 9b из базы.
-  В `config.py` оставлен промежуточный плейсхолдер `qwen/qwen3.5-3b` с пометкой
-  «СТАВЬ 1.5B» — точное имя модели подставляет opencode при prep-е по факту
-  загрузки в LM Studio (`/v1/models`).
+- **Модель**: **Qwen2.5-1.5B-Instruct** (GGUF, q4_k_m) — реально доступна как
+  готовый GGUF для LM Studio. Имя захардкожено в `config.py`
+  (`AI_MODEL_ANALYTICS = "qwen2.5-1.5b-instruct"`). Плейсхолдер `qwen3.5-3b`
+  убран. URL для скачивания в LM Studio прописан в `config.py`
+  (`LM_STUDIO_MODEL_DOWNLOAD_URL`).
 - **Thinking OFF**: уже реализовано в базе (`config.AI_ENABLE_THINKING=False`
   + `ai_client` шлёт `enable_thinking:false`); opencode только подтверждает,
   что LM Studio не включает reasoning.
@@ -114,9 +115,12 @@
 
 ## Вопросы (resolved)
 
-- **Имя модели в `config.py`** — оставляем плейсхолдер `qwen/qwen3.5-3b` с
-  пометкой «СТАВЬ 1.5B». Решено (2026-08-07): opencode подставляет точное имя
-  загруженной модели при prep-е по факту `/v1/models` в LM Studio.
-  Хардпинить `qwen/qwen3.5-1.5b` не нужно.
+- **Имя модели в `config.py`** — решено (2026-08-07, уточнение): модель
+  **Qwen2.5-1.5B-Instruct** (GGUF q4_k_m) захардкожена. Причина: реальной
+  «Qwen3.5-1.5B» не существует (Qwen3.5-серия выпустила 0.8B/2B/4B/9B…, но
+  не 1.5B; Qwen3.5-2B идёт только safetensors, требует конвертации в GGUF).
+  Qwen2.5-1.5B-Instruct-GGUF — единственная 1.5B Qwen, готовая к LM Studio.
+  Имя `qwen2.5-1.5b-instruct` прописано в `config.py` жёстко; URL скачивания
+  GGUF — в `LM_STUDIO_MODEL_DOWNLOAD_URL`. opencode скачивает именно её.
 - Отчёт `infographic/stat_report_20260806_152058.html` из базы исключён из
   репо (это сгенерённый артефакт, не нужен для работы стенда).
