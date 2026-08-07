@@ -1,0 +1,533 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>project_stat — ИИ-агент производства</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6f8;color:#1f2328;font:14px/1.5 "Segoe UI",Arial,sans-serif}
+header{background:#263238;color:#fff;padding:12px 20px;display:flex;align-items:center;
+  gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+header h1{font-size:16px;margin:0;font-weight:600}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+.dot-on{background:#66bb6a}.dot-off{background:#ef5350}.dot-wait{background:#ffa726}
+.hstat{font-size:12px;color:#b0bec5;display:flex;gap:14px;flex-wrap:wrap;margin-left:auto}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 16px 60px}
+.tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+.tab{padding:8px 16px;border:1px solid #d7dce1;background:#fff;border-radius:8px;
+  cursor:pointer;font-size:13.5px;user-select:none}
+.tab:hover{background:#eef2f5}
+.tab.active{background:#263238;color:#fff;border-color:#263238;font-weight:600}
+.pane{display:none}.pane.active{display:block}
+.card{background:#fff;border:1px solid #e1e6ea;border-radius:10px;padding:16px 18px;
+  margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h2{font-size:15px;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #eceff1}
+.card h3{font-size:13.5px;margin:14px 0 8px;color:#37474f}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}
+.kpi{background:#fafbfc;border:1px solid #e8ecef;border-radius:8px;padding:10px 12px}
+.kpi-lab{font-size:11px;color:#5c6370;text-transform:uppercase;letter-spacing:.03em}
+.kpi-val{font-size:20px;font-weight:600;margin-top:3px}
+.kpi-sub{font-size:11px;color:#5c6370}
+.good{color:#2e7d32}.bad{color:#c62828}.warn{color:#ef6c00}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.col{flex:1;min-width:290px}
+label{display:block;font-size:12px;color:#5c6370;margin:10px 0 4px;font-weight:600}
+input[type=number],input[type=text],select,textarea{width:100%;padding:8px 10px;
+  border:1px solid #cfd8dc;border-radius:6px;font:inherit;background:#fff}
+textarea{resize:vertical;min-height:74px}
+input[type=range]{width:100%}
+.btn{padding:9px 16px;border:none;border-radius:7px;background:#1565c0;color:#fff;
+  font:inherit;font-weight:600;cursor:pointer}
+.btn:hover{background:#0d47a1}
+.btn:disabled{background:#b0bec5;cursor:not-allowed}
+.btn-sec{background:#eceff1;color:#37474f}
+.btn-sec:hover{background:#cfd8dc}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:#eef2f5;text-align:left;padding:7px 9px;font-size:12px;font-weight:600;
+  border-bottom:1px solid #d7dce1}
+.tbl td{padding:6px 9px;border-bottom:1px solid #eef1f4}
+.tbl .num{font-variant-numeric:tabular-nums}
+.note{background:#fff8e1;border-left:4px solid #ef6c00;padding:10px 13px;
+  border-radius:0 6px 6px 0;font-size:12.5px;margin:10px 0}
+.note.ok{background:#e8f5e9;border-left-color:#2e7d32}
+.note.crit{background:#ffebee;border-left-color:#c62828}
+.note.info{background:#e3f2fd;border-left-color:#1565c0}
+.chat{height:390px;overflow-y:auto;border:1px solid #e1e6ea;border-radius:8px;
+  padding:12px;background:#fafbfc;margin-bottom:10px}
+.msg{margin-bottom:12px;display:flex;gap:9px}
+.msg .who{flex:0 0 62px;font-size:11px;font-weight:700;color:#5c6370;padding-top:3px}
+.msg .txt{flex:1;background:#fff;border:1px solid #e8ecef;border-radius:8px;
+  padding:9px 12px;white-space:pre-wrap;font-size:13px}
+.msg.u .txt{background:#e3f2fd;border-color:#bbdefb}
+.msg.a .txt{background:#fff}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chip{padding:5px 11px;background:#eceff1;border:1px solid #d7dce1;border-radius:14px;
+  font-size:12px;cursor:pointer}
+.chip:hover{background:#cfd8dc}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid #cfd8dc;
+.steps{margin-top:8px;font-size:13px;line-height:1.7}
+.steps .step{color:#90a4ae;transition:color .2s}
+.steps .step.active{color:#fff;font-weight:600}
+.steps .step.active::before{content:"▶ ";color:#4caf50}
+.steps .step.done{color:#4caf50}
+.steps .step.done::before{content:"✓ ";color:#4caf50}
+  border-top-color:#1565c0;border-radius:50%;animation:sp .7s linear infinite;
+  vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.muted{color:#5c6370;font-size:12.5px}
+pre.ai{white-space:pre-wrap;font:13px/1.55 "Segoe UI",Arial,sans-serif;margin:0}
+iframe{width:100%;height:78vh;border:1px solid #e1e6ea;border-radius:8px;background:#fff}
+.val{font-weight:600;color:#1565c0}
+</style>
+</head>
+<body>
+<header>
+  <h1>project_stat · ИИ-агент анализа переработки</h1>
+  <div class="hstat">
+    <span id="s-db"><span class="dot dot-wait"></span>БД…</span>
+    <span id="s-cyc">циклов: —</span>
+    <span id="s-ai"><span class="dot dot-wait"></span>ИИ…</span>
+    <span id="s-sec">—</span>
+  </div>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-p="dash">Сводка</div>
+    <div class="tab" data-p="bn">Узкие места</div>
+    <div class="tab" data-p="fc">Прогноз сырья</div>
+    <div class="tab" data-p="wi">Что-если</div>
+    <div class="tab" data-p="ai">Диалог с ИИ</div>
+    <div class="tab" data-p="rep">Отчёт</div>
+  </div>
+
+  <div id="p-dash" class="pane active">
+    <div class="card"><h2>Показатели за период</h2>
+      <div class="kpis" id="kpis"><span class="muted">загрузка…</span></div>
+      <div class="btn-row">
+        <button class="btn" id="btn-re">Пересчитать и запросить ИИ</button>
+        <button class="btn btn-sec" id="btn-refresh">Обновить</button>
+      </div>
+      <div id="re-stat" class="muted"></div>
+      <div id="re-steps" class="steps" style="display:none">
+        <div class="step" data-step="analytics"><b>1.</b> Аналитика рассчитывает агрегаты…</div>
+        <div class="step" data-step="ai"><b>2.</b> Запрос к локальной ИИ-модели (Qwen3.5 9B)…</div>
+        <div class="step" data-step="ready"><b>3.</b> ИИ формирует заключение по данным…</div>
+      </div>
+    </div>
+    <div class="card"><h2>Выход по операциям</h2>
+      <div id="ops"><span class="muted">загрузка…</span></div>
+    </div>
+    <div class="card"><h2>Потери по этапам</h2>
+      <div id="losses"><span class="muted">загрузка…</span></div>
+    </div>
+  </div>
+
+  <div id="p-bn" class="pane"><div id="bn-body"><span class="muted">загрузка…</span></div></div>
+
+  <div id="p-fc" class="pane">
+    <div class="card"><h2>Обратный прогноз потребности в сырье</h2>
+      <div class="note info">Расчёт <b>детерминированный</b>, выполняется скриптом по
+        удельному выходу цепочки. ИИ привлекается только для комментария о рисках —
+        арифметику языковой модели доверять нельзя.</div>
+      <div class="row">
+        <div class="col">
+          <label>Целевой объём готовой доски, м²</label>
+          <input type="number" id="fc-target" value="10000" min="1" step="100">
+          <label>База расчёта</label>
+          <select id="fc-mode">
+            <option value="fact">По фактическому выходу (осторожный план)</option>
+            <option value="norm">По нормативам (идеальный процесс)</option>
+          </select>
+          <label>Доля дуба в закупке, %</label>
+          <input type="number" id="fc-oak" value="30" min="5" max="70" step="0.5">
+          <div class="btn-row">
+            <button class="btn" id="btn-fc">Рассчитать</button>
+            <button class="btn btn-sec" id="btn-fc-ai">Рассчитать + комментарий ИИ</button>
+          </div>
+        </div>
+        <div class="col"><div id="fc-res"><span class="muted">задайте цель и нажмите «Рассчитать»</span></div></div>
+      </div>
+      <div id="fc-ai"></div>
+    </div>
+  </div>
+
+  <div id="p-wi" class="pane">
+    <div class="card"><h2>Режим «что-если»</h2>
+      <div class="row">
+        <div class="col">
+          <label>Доля дуба в закупке: <span class="val" id="wi-oak-v">30.0%</span></label>
+          <input type="range" id="wi-oak" min="10" max="60" step="0.5" value="30">
+          <label>Уставка сушильной камеры, % влажности: <span class="val" id="wi-sp-v">7.0</span></label>
+          <input type="range" id="wi-sp" min="5" max="10" step="0.1" value="7">
+          <label>Объём партии, м³: <span class="val" id="wi-vol-v">100</span></label>
+          <input type="range" id="wi-vol" min="50" max="300" step="10" value="100">
+          <div class="note">Ползунки пересчитывают всю цепочку в реальном времени.
+            Базой сравнения служит текущий норматив: дуб 30%, уставка 7.0.</div>
+        </div>
+        <div class="col"><div id="wi-res"><span class="muted">…</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="p-ai" class="pane">
+    <div class="card"><h2>Диалог с ИИ по данным производства</h2>
+      <div class="muted" id="ai-ctx">Модель получает актуальные рассчитанные показатели как контекст.</div>
+      <div class="chips" id="chips"></div>
+      <div class="chat" id="chat"></div>
+      <textarea id="q" placeholder="Например: почему падает выход на участке 3 и что проверить в первую очередь?"></textarea>
+      <div class="btn-row">
+        <button class="btn" id="btn-ask">Спросить</button>
+        <button class="btn btn-sec" id="btn-clear">Очистить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="p-rep" class="pane">
+    <div class="card"><h2>Файл статистики (генерируется на сервер)</h2>
+      <div class="muted" id="rep-path">—</div>
+      <div class="btn-row">
+        <button class="btn btn-sec" id="btn-rep-open">Открыть в новой вкладке</button>
+      </div>
+    </div>
+    <iframe id="rep-frame" src="/api/report"></iframe>
+  </div>
+</div>
+<script>
+"use strict";
+let A = null;            // агрегаты аналитики
+let HIST = [];           // история диалога
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const nf = (v,d=1) => (v==null||isNaN(v))?'—':
+  Number(v).toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d});
+const rub = v => nf(v,0)+' ₽';
+const pct = (v,d=2) => (v>=0?'+':'')+ (v*100).toFixed(d) + '%';
+const cls = v => v<-0.0005?'bad':(v>0.0005?'good':'');
+
+async function api(path, body){
+  const opt = body ? {method:'POST',headers:{'Content-Type':'application/json'},
+                      body:JSON.stringify(body)} : {};
+  const r = await fetch(path, opt);
+  const j = await r.json().catch(()=>({ok:false,error:'нераспознанный ответ'}));
+  if(!r.ok && !j.error) j.error = 'HTTP '+r.status;
+  return j;
+}
+
+// ── вкладки ────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  $('p-'+t.dataset.p).classList.add('active');
+  if(t.dataset.p==='rep') $('rep-frame').src = '/api/report?t='+Date.now();
+});
+
+// ── статус ─────────────────────────────────────────────────────────────
+async function loadStatus(){
+  const s = await api('/api/status');
+  if(!s.ok){ $('s-db').innerHTML='<span class="dot dot-off"></span>сервер недоступен'; return; }
+  $('s-db').innerHTML = '<span class="dot dot-on"></span>БД: '+s.files+' файлов / '+s.movements+' записей';
+  $('s-cyc').textContent = 'полных циклов: ' + s.complete.length;
+  const ai = s.ai||{};
+  $('s-ai').innerHTML = '<span class="dot '+(ai.ok?'dot-on':'dot-off')+'"></span>ИИ: '+
+    (ai.ok?(s.ai_mode+' · '+(ai.models||[]).length+' моделей'):'нет связи');
+  $('s-sec').textContent = s.anonymize ? 'обезличивание: вкл' : 'обезличивание: ВЫКЛ';
+  $('s-sec').className = s.anonymize ? 'good' : 'bad';
+  if(s.last_run) $('rep-path').textContent = 'Последний отчёт: '+s.last_run.report_path+
+     ' · ' + s.last_run.run_at + (s.last_run.ai_used?' · с заключением ИИ':' · без ИИ');
+  return s;
+}
+
+// ── сводка ─────────────────────────────────────────────────────────────
+async function loadAnalytics(){
+  const j = await api('/api/analytics');
+  if(!j.ok){
+    $('kpis').innerHTML = '<div class="note crit">Недостаточно полных циклов: '+
+      (j.complete||[]).length+' из '+j.need+'. Запустите watcher и подайте отчёты.</div>';
+    return;
+  }
+  A = j.data;
+  renderKpis(); renderOps(); renderLosses(); renderBn(); renderChips();
+}
+
+function renderKpis(){
+  const e=A.economics, f=A.forecast;
+  const dev = e.delta_board_m2/e.norm_board_m2;
+  const k=[
+    ['Циклов', A.n_cycles, A.batches.join(', '), ''],
+    ['Сырьё, м³', nf(e.total_volume_m3,1), 'дуб 30% / берёза 70%', ''],
+    ['Доска, м²', nf(e.total_board_m2,1), 'норматив '+nf(e.norm_board_m2,1), cls(dev)],
+    ['Отклонение', pct(dev), rub(e.delta_board_rub), cls(dev)],
+    ['Удельный выход', nf(f.avg_m2_per_m3,2)+' м²/м³', 'норма '+nf(f.norm_m2_per_m3,2), ''],
+    ['Маржа', rub(e.margin_rub), 'сырьё '+rub(e.raw_cost_rub), ''],
+  ];
+  $('kpis').innerHTML = k.map(x=>'<div class="kpi"><div class="kpi-lab">'+esc(x[0])+
+    '</div><div class="kpi-val '+x[3]+'">'+x[1]+'</div><div class="kpi-sub">'+
+    esc(x[2])+'</div></div>').join('');
+}
+
+function renderOps(){
+  const rows = A.ops.map(o=>'<tr><td>'+esc(o.title)+'</td>'+
+    '<td class="num">'+(o.norm*100).toFixed(1)+'%</td>'+
+    '<td class="num">'+(o.fact_avg*100).toFixed(2)+'%</td>'+
+    '<td class="num '+cls(o.dev_rel)+'">'+pct(o.dev_rel)+'</td>'+
+    '<td class="muted">'+o.per_batch.map(p=>p.batch+': '+(p.value*100).toFixed(1)+'%').join(' · ')+
+    '</td></tr>').join('');
+  $('ops').innerHTML='<table class="tbl"><thead><tr><th>Операция</th><th>Норматив</th>'+
+    '<th>Факт (ср.)</th><th>Отклонение</th><th>По партиям</th></tr></thead><tbody>'+
+    rows+'</tbody></table>';
+}
+
+function renderLosses(){
+  const ls=[...A.losses].sort((a,b)=>b.rub-a.rub);
+  const max=Math.max(...ls.map(l=>l.rub));
+  const rows=ls.map(l=>{
+    const w=Math.max(2,100*l.rub/max);
+    const col=l.kind==='структурный'?'#c62828':(l.kind==='брак'?'#ef6c00':'#78909c');
+    return '<tr><td>'+esc(l.name)+'</td><td class="num">'+
+      (l.loss_m2?nf(l.loss_m2,1)+' м²':nf(l.loss_m3,2)+' м³')+'</td>'+
+      '<td class="num">'+(l.share_of_input*100).toFixed(2)+'%</td>'+
+      '<td>'+esc(l.kind)+'</td><td class="num">'+rub(l.rub)+'</td>'+
+      '<td style="width:170px"><div style="background:'+col+';height:11px;border-radius:3px;width:'+
+      w+'%"></div></td></tr>';
+  }).join('');
+  const tot=ls.reduce((a,b)=>a+b.rub,0);
+  $('losses').innerHTML='<table class="tbl"><thead><tr><th>Этап</th><th>Объём</th>'+
+    '<th>% сырья</th><th>Тип</th><th>Оценка</th><th></th></tr></thead><tbody>'+rows+
+    '<tr><td><b>Итого</b></td><td></td><td></td><td></td><td class="num"><b>'+rub(tot)+
+    '</b></td><td></td></tr></tbody></table>';
+}
+
+// ── узкие места ────────────────────────────────────────────────────────
+function renderBn(){
+  const b=A.bottlenecks, a=b.a_deviation, st=b.b_structural, mo=b.c_moisture;
+  let h='';
+  h+='<div class="card"><h2>1. Отклонение от норматива — участок '+a.stage+'</h2>'+
+     '<p><b>'+esc(a.title)+'</b>: норматив '+(a.norm*100).toFixed(1)+'%, факт '+
+     (a.fact*100).toFixed(2)+'% (<span class="'+cls(a.dev_rel)+'">'+pct(a.dev_rel)+
+     '</span>)</p><div class="note crit">Недополучено доски <b>'+nf(a.lost_board_m2,1)+
+     ' м²</b> = <b>'+rub(a.lost_rub)+'</b> за период.</div>'+
+     '<div class="note info">'+esc(a.explanation)+'</div>'+
+     '<div class="note info">'+esc(a.recommendation)+'</div></div>';
+
+  const sur=st.surplus_m2;
+  const surTxt=Object.keys(sur).filter(k=>sur[k]>1)
+    .map(k=>k+' <b>'+nf(sur[k],0)+' м²</b>').join(', ');
+  h+='<div class="card"><h2>2. Структурное ограничение комплекта</h2>'+
+     '<p>Слой-лимитер: <b>'+esc(st.limiting_layer)+'</b>. Он определяет объём комплекта, '+
+     'остальные слои производятся сверх потребности.</p>'+
+     '<table class="tbl"><thead><tr><th>Слой</th><th>Произведено, м²</th>'+
+     '<th>Излишек, м²</th></tr></thead><tbody>'+
+     Object.keys(sur).map(L=>{
+       const prod=A.facts.reduce((s,f)=>s+f.s3_lam_m2[L],0);
+       return '<tr><td>'+esc(L)+'</td><td class="num">'+nf(prod,0)+
+         '</td><td class="num '+(sur[L]>1?'bad':'')+'">'+nf(sur[L],0)+'</td></tr>';
+     }).join('')+'</tbody></table>'+
+     '<div class="note info">'+esc(st.explanation)+'</div>'+
+     '<div class="note info">'+esc(st.recommendation)+'</div></div>';
+
+  h+='<div class="card"><h2>3. Отбраковка по влажности</h2>'+
+     '<table class="tbl"><thead><tr><th>Слой</th><th>Допуск</th><th>Ср. влажность</th>'+
+     '<th>На досушку</th><th>Замеров</th></tr></thead><tbody>'+
+     Object.keys(mo.by_layer).map(L=>{const d=mo.by_layer[L];
+       const c=d.rework_share>0.25?'bad':(d.rework_share>0.1?'warn':'good');
+       return '<tr><td>'+esc(L)+'</td><td class="num">'+d.spec[0]+'–'+d.spec[1]+
+         '</td><td class="num">'+nf(d.avg,2)+'</td><td class="num '+c+'">'+
+         (d.rework_share*100).toFixed(1)+'%</td><td class="num">'+d.n+'</td></tr>';
+     }).join('')+'</tbody></table>'+
+     '<div class="note info">'+esc(mo.explanation)+'</div>'+
+     '<div class="note ok">'+esc(mo.recommendation)+'</div></div>';
+
+  const w=A.whatif_oak;
+  let prio='<tr><td>Изменить долю дуба в закупке до '+(w.optimal_share*100).toFixed(1)+
+     '%</td><td class="num good">'+rub(w.gain_margin_rub)+'<div class="kpi-sub">выручка '+
+     rub(w.gain_rub_on_period)+' − сырьё '+rub(w.raw_cost_up_rub)+'</div></td>'+
+     '<td>планирование</td></tr>'+
+     '<tr><td>Устранить отклонение: '+esc(a.title)+'</td><td class="num good">'+
+     rub(a.lost_rub)+'</td><td>операционная</td></tr>'+
+     '<tr><td>'+esc(mo.recommendation)+'</td><td class="num good">'+rub(mo.saving_rub)+
+     '</td><td>настройка режима</td></tr>';
+  h+='<div class="card"><h2>Сводный приоритет мероприятий</h2>'+
+     '<table class="tbl"><thead><tr><th>Мероприятие</th><th>Эффект, ₽</th>'+
+     '<th>Тип проблемы</th></tr></thead><tbody>'+prio+'</tbody></table></div>';
+  $('bn-body').innerHTML=h;
+}
+
+// ── прогноз ────────────────────────────────────────────────────────────
+function fcRender(d){
+  $('fc-res').innerHTML='<table class="tbl"><tbody>'+
+    '<tr><td>Целевой объём доски</td><td class="num"><b>'+nf(d.target_m2,0)+' м²</b></td></tr>'+
+    '<tr><td>Удельный выход</td><td class="num">'+nf(d.m2_per_m3,3)+' м²/м³</td></tr>'+
+    '<tr><td>Требуется круглого леса</td><td class="num"><b>'+nf(d.roundwood_m3,1)+' м³</b></td></tr>'+
+    '<tr><td>в т.ч. дуб</td><td class="num">'+nf(d.oak_m3,1)+' м³</td></tr>'+
+    '<tr><td>в т.ч. берёза</td><td class="num">'+nf(d.birch_m3,1)+' м³</td></tr>'+
+    '<tr><td>Стоимость сырья</td><td class="num">'+rub(d.cost_rub)+'</td></tr>'+
+    '<tr><td>Выручка при плане</td><td class="num good">'+rub(d.revenue_rub)+'</td></tr>'+
+    '<tr><td>Валовая разница</td><td class="num"><b>'+rub(d.revenue_rub-d.cost_rub)+
+    '</b></td></tr></tbody></table>';
+}
+async function doForecast(withAi){
+  const body={target_m2:+$('fc-target').value, mode:$('fc-mode').value,
+              oak_share:(+$('fc-oak').value)/100};
+  $('fc-res').innerHTML='<span class="spin"></span>расчёт…';
+  $('fc-ai').innerHTML='';
+  const j=await api(withAi?'/api/explain':'/api/forecast', body);
+  if(!j.ok){ $('fc-res').innerHTML='<div class="note crit">'+esc(j.error)+'</div>'; return; }
+  fcRender(j.data);
+  if(withAi&&j.comment) $('fc-ai').innerHTML='<div class="note info"><b>Комментарий ИИ:</b><br>'+
+    '<pre class="ai">'+esc(j.comment)+'</pre></div>';
+}
+$('btn-fc').onclick=()=>doForecast(false);
+$('btn-fc-ai').onclick=async()=>{
+  $('btn-fc-ai').disabled=true;
+  $('fc-ai').innerHTML='<span class="spin"></span>ИИ формирует комментарий…';
+  await doForecast(true);
+  $('btn-fc-ai').disabled=false;
+};
+
+// ── что-если ───────────────────────────────────────────────────────────
+let wiTimer=null;
+function wiSchedule(){ clearTimeout(wiTimer); wiTimer=setTimeout(doWhatIf,180); }
+async function doWhatIf(){
+  const oak=+$('wi-oak').value, sp=+$('wi-sp').value, vol=+$('wi-vol').value;
+  $('wi-oak-v').textContent=oak.toFixed(1)+'%';
+  $('wi-sp-v').textContent=sp.toFixed(1);
+  $('wi-vol-v').textContent=vol;
+  const j=await api('/api/whatif',{oak_share:oak/100,setpoint:sp,volume:vol});
+  if(!j.ok){ $('wi-res').innerHTML='<div class="note crit">'+esc(j.error)+'</div>'; return; }
+  const d=j.data;
+  const g=d.gain_m2, gc=g>0.5?'good':(g<-0.5?'bad':'');
+  const sur=d.surplus_m2;
+  $('wi-res').innerHTML=
+    '<div class="kpis">'+
+    '<div class="kpi"><div class="kpi-lab">Доска</div><div class="kpi-val">'+nf(d.board_m2,0)+
+    ' м²</div><div class="kpi-sub">база '+nf(d.base_board_m2,0)+'</div></div>'+
+    '<div class="kpi"><div class="kpi-lab">Прирост</div><div class="kpi-val '+gc+'">'+
+    (g>=0?'+':'')+nf(g,0)+' м²</div><div class="kpi-sub">'+rub(d.gain_rub)+'</div></div>'+
+    '<div class="kpi"><div class="kpi-lab">Лимитер</div><div class="kpi-val" '+
+    'style="font-size:16px">'+esc(d.limiting_layer)+'</div>'+
+    '<div class="kpi-sub">комплект '+nf(d.complect_m2,0)+' м²</div></div>'+
+    '<div class="kpi"><div class="kpi-lab">Маржа партии</div><div class="kpi-val" '+
+    'style="font-size:16px">'+rub(d.margin_rub)+'</div></div>'+
+    '</div>'+
+    '<table class="tbl" style="margin-top:10px"><thead><tr><th>Слой</th>'+
+    '<th>Ламель, м²</th><th>Излишек, м²</th><th>На досушку</th></tr></thead><tbody>'+
+    Object.keys(d.lam_m2).map(L=>'<tr><td>'+esc(L)+'</td><td class="num">'+
+      nf(d.lam_m2[L],0)+'</td><td class="num '+(sur[L]>1?'bad':'')+'">'+nf(sur[L],0)+
+      '</td><td class="num">'+(d.rework[L]*100).toFixed(1)+'%</td></tr>').join('')+
+    '</tbody></table>'+
+    '<div class="note">Досушка при этой уставке: <b>'+nf(d.rework_m2,0)+' м²</b> = '+
+    rub(d.rework_rub)+'. Лимитер меняется при выравнивании слоёв — следите за строкой '+
+    '«Излишек»: чем он ближе к нулю по всем слоям, тем эффективнее закупка.</div>';
+}
+['wi-oak','wi-sp','wi-vol'].forEach(id=>$(id).addEventListener('input',wiSchedule));
+
+// ── диалог с ИИ ────────────────────────────────────────────────────────
+const PRESETS=[
+ 'Как ИИ может быть полезен в моей работе мастера участка?',
+ 'Почему падает выход на участке 3 и что проверить в первую очередь?',
+ 'Объясни экономику дисбаланса слоёв простыми словами для начальника цеха',
+ 'Составь план мероприятий на неделю с приоритетами',
+ 'Какие данные нужно начать собирать, чтобы прогноз стал точнее?'
+];
+function renderChips(){
+  $('chips').innerHTML=PRESETS.map((p,i)=>'<div class="chip" data-i="'+i+'">'+esc(p)+'</div>').join('');
+  document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+    $('q').value=PRESETS[+c.dataset.i]; $('q').focus();
+  });
+}
+function addMsg(role,txt){
+  const d=document.createElement('div');
+  d.className='msg '+(role==='user'?'u':'a');
+  d.innerHTML='<div class="who">'+(role==='user'?'Вы':'ИИ')+'</div><div class="txt">'+
+    esc(txt)+'</div>';
+  $('chat').appendChild(d); $('chat').scrollTop=$('chat').scrollHeight;
+  return d;
+}
+async function ask(){
+  const q=$('q').value.trim(); if(!q) return;
+  $('btn-ask').disabled=true; $('q').value='';
+  addMsg('user',q);
+  const w=addMsg('assistant','…');
+  w.querySelector('.txt').innerHTML='<span class="spin"></span>модель отвечает…';
+  startStepPoll();
+  const j=await api('/api/ask',{question:q,history:HIST});
+  if(j.ok){
+    w.querySelector('.txt').textContent=j.answer;
+    HIST.push({role:'user',content:q},{role:'assistant',content:j.answer});
+    if(HIST.length>16) HIST=HIST.slice(-16);
+  } else {
+    w.querySelector('.txt').innerHTML='<span class="bad">Ошибка: '+esc(j.error)+'</span>';
+  }
+  stopStepPoll();
+  $('btn-ask').disabled=false;
+}
+function setSteps(phase){
+  const order=['analytics','ai','ready'];
+  const idx=order.indexOf(phase);
+  document.querySelectorAll('#re-steps .step').forEach(el=>{
+    const s=el.getAttribute('data-step');
+    el.classList.remove('active','done');
+    const si=order.indexOf(s);
+    if(phase==='error'){ return; }
+    if(si<idx) el.classList.add('done');
+    else if(si===idx) el.classList.add('active');
+  });
+}
+let _aiTimer=null;
+function startStepPoll(){
+  $('re-steps').style.display='block';
+  setSteps('analytics');
+  if(_aiTimer) clearInterval(_aiTimer);
+  _aiTimer=setInterval(async()=>{
+    try{ const s=await api('/api/ai_status'); if(s&&s.ok) setSteps(s.phase); }catch(e){}
+  }, 800);
+}
+function stopStepPoll(){ if(_aiTimer){ clearInterval(_aiTimer); _aiTimer=null; } }
+
+$('btn-ask').onclick=ask;
+$('btn-clear').onclick=()=>{ $('chat').innerHTML=''; HIST=[]; };
+$('q').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)) ask();
+});
+
+// ── прочее ─────────────────────────────────────────────────────────────
+$('btn-refresh').onclick=async()=>{ await loadStatus(); await loadAnalytics(); };
+$('btn-re').onclick=async()=>{
+  $('btn-re').disabled=true;
+  $('re-stat').innerHTML='<span class="spin"></span>аналитика → ИИ → вывод (обычно ~30-40 с на локальной модели)…';
+  startStepPoll();
+  const j=await api('/api/reanalyze',{with_ai:true});
+  stopStepPoll();
+  setSteps(j.ok ? 'ready' : 'error');
+  $('re-stat').innerHTML = j.ok
+    ? '<span class="good">Готово. Отчёт: '+esc(j.report)+'</span>'
+    : '<span class="bad">Ошибка: '+esc(j.error)+'</span>';
+  if(j.ok){ await loadStatus(); await loadAnalytics();
+            $('rep-frame').src='/api/report?t='+Date.now(); }
+  $('btn-re').disabled=false;
+};
+$('btn-rep-open').onclick=()=>window.open('/api/report','_blank');
+
+(async function(){
+  let prevCycles = -1;
+  async function tick(){
+    const s = await loadStatus();
+    if(!s || !s.ok) return;
+    const n = s.complete.length;
+    if(n !== prevCycles){                 // число полных циклов изменилось
+      prevCycles = n;
+      await loadAnalytics();              // пересчёт сводки по накопленным данным
+      const f = document.getElementById('rep-frame');
+      if(f && s.ready) f.src = '/api/report?t='+Date.now();  // отчёт — только при готовности (10 циклов)
+    }
+  }
+  await tick();
+  setInterval(tick, 5000);   // 5s — ловим каждый новый полный цикл
+})();
+</script>
+</body>
+</html>

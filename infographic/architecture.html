@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>project_stat — Архитектура взаимодействия ИИ с производством</title>
+<style>
+  :root{
+    --bg:#fdf6e3; --ink:#1a1a2e; --card:#ffffff;
+    --c1:#ff5a5f; --c2:#ffd23f; --c3:#06d6a0; --c4:#118ab2; --c5:#9b5de5; --c6:#f15bb5;
+    --line:#1a1a2e;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 26px 40px;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;
+    border-bottom:4px solid var(--line);padding-bottom:14px;margin-bottom:22px;}
+  h1{font-size:32px;margin:0;font-weight:900;letter-spacing:-.5px;}
+  h1 .tag{display:inline-block;background:var(--c4);color:#fff;font-size:14px;
+    padding:3px 10px;border-radius:20px;vertical-align:middle;margin-left:8px;}
+  .sub{font-size:14px;opacity:.7;margin-top:6px;max-width:680px;}
+  .nav{font-size:13px;margin-bottom:16px;}
+  .nav a{display:inline-block;background:var(--c2);border:2px solid var(--line);
+    border-radius:18px;padding:4px 12px;font-weight:800;text-decoration:none;color:var(--ink);}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .card{background:var(--card);border:3px solid var(--line);border-radius:16px;
+    padding:16px;box-shadow:5px 5px 0 var(--line);}
+  .card.span2{grid-column:span 2;}
+  .card.span3{grid-column:span 3;}
+  .card.span4{grid-column:span 4;}
+  .ttl{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
+    display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto;}
+  .big{font-size:22px;font-weight:900;line-height:1.1;}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;
+    border-bottom:1px dashed rgba(26,26,46,.18);font-size:13.5px;}
+  .kv:last-child{border-bottom:none;}
+  .kv b{font-weight:800;text-align:right;}
+  .pill{display:inline-block;border:2px solid var(--line);border-radius:20px;
+    padding:2px 10px;font-size:12.5px;font-weight:800;margin:3px 4px 0 0;}
+  .pill.a{background:var(--c3);color:#04361f;}
+  .pill.c{background:var(--c5);color:#fff;}
+  .pill.b{background:var(--c4);color:#fff;}
+
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;justify-content:center;}
+  .node{border:3px solid var(--line);border-radius:14px;padding:12px 14px;min-width:140px;
+    flex:1;text-align:center;background:var(--card);box-shadow:3px 3px 0 var(--line);}
+  .node b{display:block;font-size:14px;}
+  .node small{font-size:11.5px;opacity:.7;}
+  .arrow{display:flex;align-items:center;font-weight:900;font-size:22px;padding:0 6px;color:var(--c1);}
+  .roles{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .role{border:3px solid var(--line);border-radius:16px;padding:16px;background:var(--card);box-shadow:5px 5px 0 var(--line);}
+  .role.agent{background:#eafff7;}
+  .role.cons{background:#f3ecff;}
+  .role h3{margin:0 0 8px;font-size:18px;font-weight:900;}
+  .role .tagr{display:inline-block;font-size:12px;font-weight:800;border:2px solid var(--line);
+    border-radius:14px;padding:2px 10px;margin-bottom:10px;}
+  .role ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.5;}
+  .claim{border:3px dashed var(--line);border-radius:14px;background:var(--c2);
+    padding:14px 18px;font-size:14.5px;line-height:1.55;font-weight:600;margin-top:4px;}
+  .claim .hl{background:#fff;border:2px solid var(--line);border-radius:8px;padding:1px 6px;}
+  footer{margin-top:24px;border-top:3px solid var(--line);padding-top:12px;
+    font-size:12px;opacity:.7;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  @media print{body{background:#fff;}.card,.node,.role{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>ИИ и производство: две роли <span class="tag">project_stat</span></h1>
+      <div class="sub">Как скрипты и интерфейс распределяют работу между ИИ-агентом и ИИ-консультантом. Нарратив для презентации.</div>
+    </div>
+    <div class="head-badge" style="background:var(--c6);color:#fff;border:3px solid var(--line);border-radius:14px;padding:10px 16px;font-weight:800;font-size:13px;transform:rotate(2deg);">Архитектура<br>взаимодействия</div>
+  </header>
+
+  <div class="nav"><a href="intro_data.html">← Вводные данные (нормативы/цены)</a> &nbsp;·&nbsp; Архитектура взаимодействия</div>
+
+  <!-- РОЛИ ИИ -->
+  <div class="roles" style="margin-bottom:16px;">
+    <div class="role agent">
+      <h3>🤖 ИИ — АГЕНТ</h3>
+      <span class="tagr" style="background:var(--c3);color:#04361f;">выполняет и собирает</span>
+      <ul>
+        <li>Автоматически запускает алгоритмические задачи по расписанию/триггеру</li>
+        <li>Собирает и агрегирует аналитику из сменных логов</li>
+        <li>Формирует отчёт без участия человека (watcher → /api/reanalyze)</li>
+      </ul>
+    </div>
+    <div class="role cons">
+      <h3>💬 ИИ — КОНСУЛЬТАНТ</h3>
+      <span class="tagr" style="background:var(--c5);color:#fff;">советует</span>
+      <ul>
+        <li>Получает на рассмотрение ключевые данные аналитики</li>
+        <li>Выдаёт рекомендации по узким местам и мерам</li>
+        <li>Отвечает на свободные вопросы оператора в интерфейсе</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ПОТОК ДАННЫХ -->
+  <div class="card span4" style="margin-bottom:16px;">
+    <div class="ttl"><span class="dot" style="background:var(--c1)"></span>Поток данных: от смены к рекомендации</div>
+    <div class="flow">
+      <div class="node"><b>CSV-отчёт смены</b><small>gen_test_data.py</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>Папка наблюдения</b><small>test_reports/ (эмуляция сервера)</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>Наблюдатель</b><small>watcher.py polling</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>БД + аналитика</b><small>movements → aggregates</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>Отчёт + ИИ</b><small>server → /api/reanalyze</small></div>
+    </div>
+    <div class="note" style="font-size:12px;opacity:.7;margin-top:10px;">При накоплении ≥10 партий watcher сам вызывает ИИ-агента. Готовый отчёт и диалог с консультантом — в интерфейсе оператора.</div>
+  </div>
+
+  <div class="grid">
+    <!-- КОМПОНЕНТЫ -->
+    <div class="card span3">
+      <div class="ttl"><span class="dot" style="background:var(--c4)"></span>Три компонента демонстрации</div>
+      <div class="kv"><span><b>1. Генератор отчётов</b></span><b>скрипт синтезирует отчёты о работе участков</b></div>
+      <div class="kv"><span><b>2. Наблюдатель папки</b></span><b>скрипт следит за виртуальной папкой на сервере, куда помещаются отчёты</b></div>
+      <div class="kv"><span><b>3. Интерфейс пользователя</b></span><b>формирует отчёт и обеспечивает взаимодействие с ИИ-консультантом</b></div>
+    </div>
+
+    <!-- ИИ РОЛИ КОРОТКО -->
+    <div class="card span1">
+      <div class="ttl"><span class="dot" style="background:var(--c5)"></span>ИИ: 2 роли</div>
+      <span class="pill a">Агент</span><br>
+      <span class="pill c">Консультант</span>
+      <div class="note" style="font-size:12px;opacity:.7;margin-top:8px;">Один локальный движок — две функции.</div>
+    </div>
+  </div>
+
+  <!-- ТЕЗИС ДЛЯ СЛОВА -->
+  <div class="claim">
+    «В данном проекте показан способ взаимодействия ИИ с производством в двух ролях: роли <span class="hl">агента</span>, который выполняет алгоритмические задачи и собирает аналитику, и в роли <span class="hl">консультанта</span>, которому передаются на рассмотрение ключевые данные аналитики для выдачи рекомендаций.»
+  </div>
+
+  <!-- ДИСКЛЕЙМЕР -->
+  <div class="card span4" style="margin-top:16px;background:#fff8e6;">
+    <div class="ttl"><span class="dot" style="background:var(--c2)"></span>Оговорка о модели (для аудитории)</div>
+    <div style="font-size:13.5px;line-height:1.55;">
+      • Техпроцесс <b>упрощён до 4-х участков</b>; нормативные выходы и другие вводные данные — <b>вымышленные</b>.<br>
+      • Отчёты генерируются с выходами в пределах <b>разных диапазонов около нормативов</b> для приближения к реальному техпроцессу.<br>
+      • Это <b>демонстрационный стенд</b>: архитектура и способ взаимодействия ИИ с производством, а не промышленный контур.
+    </div>
+  </div>
+
+  <footer>
+    <div>Компоненты: <code>gen_test_data.py</code> · <code>watcher.py</code> · <code>server.py</code>+<code>ui.html</code></div>
+    <div>ИИ: локальная модель <code>qwen/qwen3.5-9b</code> (агент + консультант в одном движке)</div>
+  </footer>
+</div>
+</body>
+</html>

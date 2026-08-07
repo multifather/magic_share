@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>project_stat — Вводные данные для генерации отчётов</title>
+<style>
+  :root{
+    --bg:#fdf6e3; --ink:#1a1a2e; --card:#ffffff;
+    --c1:#ff5a5f; --c2:#ffd23f; --c3:#06d6a0; --c4:#118ab2; --c5:#9b5de5; --c6:#f15bb5;
+    --line:#1a1a2e;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 26px 40px;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;
+    border-bottom:4px solid var(--line);padding-bottom:14px;margin-bottom:22px;}
+  h1{font-size:34px;margin:0;font-weight:900;letter-spacing:-.5px;}
+  h1 .tag{display:inline-block;background:var(--c4);color:#fff;font-size:14px;
+    padding:3px 10px;border-radius:20px;vertical-align:middle;margin-left:8px;}
+  .sub{font-size:14px;opacity:.7;margin-top:6px;max-width:640px;}
+  .head-badge{background:var(--c2);border:3px solid var(--line);border-radius:14px;
+    padding:10px 16px;font-weight:800;font-size:14px;transform:rotate(-2deg);}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .card{background:var(--card);border:3px solid var(--line);border-radius:16px;
+    padding:16px;box-shadow:5px 5px 0 var(--line);}
+  .card.span2{grid-column:span 2;}
+  .card.span3{grid-column:span 3;}
+  .card.span4{grid-column:span 4;}
+  .ttl{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
+    display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto;}
+  .big{font-size:30px;font-weight:900;line-height:1.05;}
+  .big small{font-size:14px;font-weight:700;opacity:.65;}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;
+    border-bottom:1px dashed rgba(26,26,46,.18);font-size:13.5px;}
+  .kv:last-child{border-bottom:none;}
+  .kv b{font-weight:800;}
+  .pill{display:inline-block;background:var(--c3);color:#04361f;border:2px solid var(--line);
+    border-radius:20px;padding:2px 10px;font-size:12.5px;font-weight:800;margin:3px 4px 0 0;}
+  .pill.alt{background:var(--c1);color:#fff;}
+  .pill.blue{background:var(--c4);color:#fff;}
+  .pill.pur{background:var(--c5);color:#fff;}
+  .chain{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;}
+  .st{border:3px solid var(--line);border-radius:12px;padding:10px 12px;min-width:150px;
+    flex:1;background:var(--card);box-shadow:3px 3px 0 var(--line);}
+  .st b{display:block;font-size:13px;}
+  .st .y{font-weight:900;font-size:15px;color:var(--c4);}
+  .arrow{display:flex;align-items:center;font-weight:900;font-size:22px;padding:0 4px;}
+  .note{font-size:12px;opacity:.7;margin-top:8px;line-height:1.4;}
+  footer{margin-top:24px;border-top:3px solid var(--line);padding-top:12px;
+    font-size:12px;opacity:.7;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  .legend{font-size:12px;opacity:.8;}
+  @media print{body{background:#fff;}.card{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav" style="font-size:13px;margin-bottom:16px;"><a href="architecture.html" style="display:inline-block;background:var(--c2);border:2px solid var(--line);border-radius:18px;padding:4px 12px;font-weight:800;text-decoration:none;color:var(--ink);">Вводные данные → Архитектура взаимодействия ИИ</a></div>
+  <header>
+    <div>
+      <h1>Вводные данные <span class="tag">project_stat</span></h1>
+      <div class="sub">Что ложится в основу автоматического отчёта и ИИ-анализа. Источник — <code>config.py</code>, схема БД и парсер CSV-лога движений.</div>
+    </div>
+    <div class="head-badge">Для презентации<br>перед аудиторией</div>
+  </header>
+
+  <div class="grid">
+
+    <!-- БЛОК 1: структура входных данных -->
+    <div class="card span2">
+      <div class="ttl"><span class="dot" style="background:var(--c4)"></span>Входной сигнал: CSV-лог движений</div>
+      <div class="kv"><span>Разделитель</span><b>;</b></div>
+      <div class="kv"><span>Кодировка</span><b>utf-8-sig</b></div>
+      <div class="kv"><span>Ключевые поля (15)</span><b>ts, batch_id, stage, operation, direction, material, species, layer, thickness_mm, qty, unit, operator</b></div>
+      <div class="kv"><span>Куда попадает</span><b>SQLite: movements · moisture · files</b></div>
+      <div class="note">Один CSV = один прогон смены. Скрипт парсит движения и замЕры влажности, считает агрегаты и только потом отдаёт их ИИ.</div>
+    </div>
+
+    <!-- БЛОК 2: порог запуска -->
+    <div class="card">
+      <div class="ttl"><span class="dot" style="background:var(--c1)"></span>Порог запуска отчёта</div>
+      <div class="big">10 <small>партий</small></div>
+      <div class="note"><code>FULL_CYCLES_TRIGGER = 10</code><br>Меньше 10 партий — отчёт не формируется.</div>
+    </div>
+
+    <!-- БЛОК 3: сырьё -->
+    <div class="card">
+      <div class="ttl"><span class="dot" style="background:var(--c2)"></span>Сырьё</div>
+      <div class="kv"><span>Породы</span><b>дуб · берёза</b></div>
+      <div class="kv"><span>Доля дуба</span><b>30% (берёза 70%)</b></div>
+      <div class="kv"><span>Объём партии, м³</span><b>90–125</b></div>
+      <div class="note"><code>OAK_SHARE=0.3</code><br><code>BATCH_VOLUMES=[90,100,110,120,95,105,115,125,98,108]</code></div>
+    </div>
+
+    <!-- БЛОК 4: техпроцесс -->
+    <div class="card span4">
+      <div class="ttl"><span class="dot" style="background:var(--c5)"></span>Техпроцесс: 4 участка и нормативы выхода</div>
+      <div class="chain">
+        <div class="st"><b>Участок 1<br>Распиловка</b><span class="y">выход дуб 80% / берёза 60%</span></div>
+        <div class="arrow">→</div>
+        <div class="st"><b>Участок 2<br>Калибровка и отбор слоёв</b><span class="y">калибровка 90%</span></div>
+        <div class="arrow">→</div>
+        <div class="st"><b>Участок 3<br>Пиление ламелей и склейка</b><span class="y">распил 80/95/90% · склейка 95%</span></div>
+        <div class="arrow">→</div>
+        <div class="st"><b>Участок 4<br>Профилирование</b><span class="y">выход 95%</span></div>
+      </div>
+      <div class="note">3 слоя: <span class="pill">верхняя 5 мм</span><span class="pill">средняя 10 мм</span><span class="pill">нижняя 5 мм</span> · <code>YIELD_S1/S2/S3/S4</code> — единая точка правды, без хардкода в расчётах.</div>
+    </div>
+
+    <!-- БЛОК 5: цены -->
+    <div class="card span2">
+      <div class="ttl"><span class="dot" style="background:var(--c3)"></span>Цены (руб)</div>
+      <div class="kv"><span>Круглый лес — дуб</span><b>22 000 / м³</b></div>
+      <div class="kv"><span>Круглый лес — берёза</span><b>6 500 / м³</b></div>
+      <div class="kv"><span>Доска (готовая)</span><b>2 800 / м²</b></div>
+      <div class="kv"><span>Щепа (отход)</span><b>900 / м³</b></div>
+      <div class="kv"><span>Досушка 1 м²</span><b>35 ₽</b></div>
+      <div class="note"><code>PRICES</code> + <code>REWORK_COST_PER_M2</code>. На этих цифрах считаются потери в деньгах, которые видит ИИ.</div>
+    </div>
+
+    <!-- БЛОК 6: влажность -->
+    <div class="card span2">
+      <div class="ttl"><span class="dot" style="background:var(--c6)"></span>Контроль влажности</div>
+      <div class="kv"><span>Уставка сушилки</span><b>7.0%</b></div>
+      <div class="kv"><span>Допуск верх. ламель</span><b>6.1–7.6%</b></div>
+      <div class="kv"><span>Допуск сред. слой</span><b>5.5–8.5%</b></div>
+      <div class="kv"><span>Допуск ниж. ламель</span><b>6.3–8.3%</b></div>
+      <div class="kv"><span>За пределами</span><b>&gt;10% — брак</b></div>
+      <div class="note"><code>DRYER_SETPOINT=7.0</code>, <code>MOISTURE_SPEC</code> по слоям. Отклонение → досушка (4879 м² за период в тесте).</div>
+    </div>
+
+    <!-- БЛОК 7: что видит ИИ (фактлист) -->
+    <div class="card span4">
+      <div class="ttl"><span class="dot" style="background:var(--c4)"></span>Что попадает в ИИ (фактлист, не сырые логи)</div>
+      <div>
+        <span class="pill blue">Период и число циклов</span>
+        <span class="pill blue">Выход по операциям</span>
+        <span class="pill blue">Потери по этапам (в м² и ₽)</span>
+        <span class="pill blue">Узкое место №1 — отклонение норматива</span>
+        <span class="pill blue">Узкое место №2 — структурный излишек</span>
+        <span class="pill blue">Узкое место №3 — сушка/брак</span>
+        <span class="pill blue">Что-если (перебор долей/уставки)</span>
+        <span class="pill blue">Прогноз выпуска</span>
+      </div>
+      <div class="note">Принцип: <b>ИИ не считает</b> — все цифры приходят рассчитанными из <code>analytics.py</code>. Модель отвечает за интерпретацию, приоритеты и меры. Локальная модель <code>qwen/qwen3.5-9b</code>, reasoning выключен.</div>
+    </div>
+
+  </div>
+
+  <footer>
+    <div>Источник вводных: <code>script/config.py</code> · схема БД <code>production.db</code> (movements, moisture, files) · парсер CSV.</div>
+    <div class="legend">Отчёт генерируется при ≥10 партиях · все нормативы вынесены в config · ИИ интерпретирует, не считает.</div>
+  </footer>
+</div>
+</body>
+</html>

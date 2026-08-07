@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Databases (generated at runtime)
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Generated demo data
+test_reports/*.csv
+test_reports/archive/*.csv
+workflow/production.db
+workflow/production.db-shm
+workflow/production.db-wal
+workflow/reports/stat_report_*.html
+workflow/reports/latest.html
+
+# Logs
+*.log
+run_all_diag.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local secrets
+.env
