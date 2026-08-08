@@ -46,11 +46,31 @@ start "STAT_WATCHER" cmd /k "%PY% watcher.py --watch"
 ping -n 1 127.0.0.1 >nul
 start "STAT_GEN" cmd /k "%PY% gen_test_data.py --interactive --seed 42"
 
-REM === 4. explorer + DEFAULT browser (no hard Firefox dependency) ===
-echo [%DATE% %TIME%] launching explorer + browser... >> "%LOG%"
+REM === 4. explorer + DEFAULT browser in a SEPARATE NEW window ===
+echo [%DATE% %TIME%] launching explorer + browser (new window)... >> "%LOG%"
 start "" explorer "%~dp0project_stat\test_reports"
 ping -n 1 127.0.0.1 >nul
-start "" http://127.0.0.1:8770/
+
+REM Resolve the default browser EXE from the registry, then open the URL
+REM in a NEW window (so layout.ps1 can catch it as a standalone window,
+REM not a tab in an already-open browser session).
+set "BROWSER_EXE="
+for /f "tokens=2,*" %%A in ('reg query "HKCU\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice" /v ProgId 2^>nul') do set "PROGID=%%B"
+if defined PROGID (
+  for /f "tokens=2,*" %%A in ('reg query "HKCR\%PROGID%\shell\open\command" /ve 2^>nul') do set "BROWSER_CMD=%%B"
+  REM extract the executable path (first quoted token, or first token)
+  for /f "tokens=1" %%X in ('echo %BROWSER_CMD%') do (
+    set "BROWSER_EXE=%%~X"
+    if not defined BROWSER_EXE set "BROWSER_EXE=%%X"
+  )
+)
+if defined BROWSER_EXE (
+  echo [%DATE% %TIME%] default browser: %BROWSER_EXE% >> "%LOG%"
+  start "" "%BROWSER_EXE%" --new-window http://127.0.0.1:8770/
+) else (
+  echo [%DATE% %TIME%] browser exe not resolved, fallback to 'start' >> "%LOG%"
+  start "" http://127.0.0.1:8770/
+)
 
 REM === 5. arrange windows FIRST (2x2 grid), THEN let generation run ===
 REM layout.ps1 lives in repo root (one level up from script/)

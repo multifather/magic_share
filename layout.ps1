@@ -54,9 +54,10 @@ $enum = [WinApi+EnumWindowsProc]{
     elseif ($c -eq 'CabinetWClass' -and $t -match 'test_reports') { $Script:Found['E'] = $hwnd }
     # DEFAULT browser (no hard Firefox dependency): match by URL in title OR
     # by any known browser window class. Covers Chrome/Edge/Firefox/Opera/brave.
+    # Use -match (regex) so both "127.0.0.1:8770" and "127.0.0.1/8770" titles hit.
     elseif ($t -match '127\.0\.0\.1[:/]?8770' -or
-            $c -match 'MozillaWindowClass|Chrome_WidgetWin_1|ApplicationFrameWindow|OpWindow') {
-        $Script:Found['F'] = $hwnd
+            $c -match 'MozillaWindowClass|Chrome_WidgetWin_1|MsEdge_WidgetWin_1|ApplicationFrameWindow|OpWindow') {
+        if (-not $Script:Found['F']) { $Script:Found['F'] = $hwnd }
     }
     return $true
 }

@@ -59,10 +59,22 @@ else
   "$PY" gen_test_data.py --interactive --seed 42 &
 fi
 
-# --- file manager + default browser ---
+# --- file manager + default browser in a SEPARATE NEW window ---
 ( open "../test_reports" 2>/dev/null || xdg-open "../test_reports" 2>/dev/null || true )
 sleep 1
-( open "http://127.0.0.1:8770/" 2>/dev/null || xdg-open "http://127.0.0.1:8770/" 2>/dev/null || true )
+# macOS: 'open -n' = new instance (standalone window). Linux: try --new-window.
+if command -v osascript >/dev/null 2>&1; then
+  open -n "http://127.0.0.1:8770/" 2>/dev/null || open "http://127.0.0.1:8770/" 2>/dev/null || true
+else
+  ( xdg-open "http://127.0.0.1:8770/" 2>/dev/null || true )
+  # best-effort: if a known browser exists, force a new window
+  for B in google-chrome chromium chromium-browser brave-browser firefox; do
+    if command -v "$B" >/dev/null 2>&1; then
+      "$B" --new-window "http://127.0.0.1:8770/" >/dev/null 2>&1 &
+      break
+    fi
+  done
+fi
 
 # --- arrange 2x2 (macOS via AppleScript; Linux skipped, manual arrange) ---
 sleep 3
