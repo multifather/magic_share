@@ -142,6 +142,28 @@ PowerShell-синтаксис-чек.
 
 Проверено ad-hoc: токены на месте, `layout.ps1` проходит PowerShell-синтаксис.
 
+## Баг: run.bat не открывал браузер (2026-08-08)
+
+Коллега прислал точный баг-репорт. Корень — два дефекта в `run.bat`:
+1. **Delayed expansion в cmd**: `echo %BROWSER_CMD%` внутри блока `if (...)`
+   раскрывалось пустым на этапе разбора блока → `ECHO is on.` →
+   `BROWSER_EXE=ECHO` → `start "" "ECHO" --new-window` молча падал.
+   В логе: `default browser: ECHO`.
+2. **Пути с пробелами**: `for /f "tokens=1"` резал
+   `"C:\Program Files\Mozilla Firefox\firefox.exe"` до `C:\Program`.
+
+Фикс: весь резолв вынесен в отдельный `resolve_browser.ps1` (читает ProgId
+из реестра → команда запуска → полный путь EXE строго между кавычками, с
+fallback на `HKCU\Software\Classes`, с проверкой существования файла).
+`run.bat` вызывает `powershell -File resolve_browser.ps1` и берёт вывод в
+`BROWSER_EXE` через `for /f "delims="`. Это устраняет оба бага и quote-hell
+(PS-код в файле, а не внутри `for /f ('...')`).
+
+**Проверено через `cmd /c`** (рекомендация из репорта): тестовый .bat с
+этой логикой выдал `default browser: C:\Program Files\Mozilla Firefox\firefox.exe`
+(полный путь с пробелами, без `ECHO`), `RESULT=OK`. macOS/Linux (`run.sh`)
+этой проблемы не имеют (`open -n` / `xdg-open` сами ищут браузер).
+
 ## Релизы
 
 - **2026-08-07**: создан репо `github.com/multifather/magic_share` (public),

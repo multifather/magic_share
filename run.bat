@@ -51,34 +51,13 @@ echo [%DATE% %TIME%] launching explorer + browser (new window)... >> "%LOG%"
 start "" explorer "%~dp0project_stat\test_reports"
 ping -n 1 127.0.0.1 >nul
 
-REM Resolve the default browser EXE from the registry, then open the URL
-REM in a NEW window (so layout.ps1 can catch it as a standalone window,
-REM not a tab in an already-open browser session).
+REM Resolve the default browser EXE via a helper PowerShell script
+REM (avoids cmd delayed-expansion + spaces-in-path bugs). The script returns
+REM the full EXE path or empty string on failure.
 set "BROWSER_EXE="
-REM 1) UserChoice ProgId -> open command (HKCR or HKCU\Software\Classes)
-for /f "tokens=2,*" %%A in ('reg query "HKCU\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice" /v ProgId 2^>nul') do set "PROGID=%%B"
-if defined PROGID (
-  for /f "tokens=2,*" %%A in ('reg query "HKCR\%PROGID%\shell\open\command" /ve 2^>nul') do set "BROWSER_CMD=%%B"
-  if not defined BROWSER_CMD (
-    for /f "tokens=2,*" %%A in ('reg query "HKCU\Software\Classes\%PROGID%\shell\open\command" /ve 2^>nul') do set "BROWSER_CMD=%%B"
-  )
-  REM extract the executable path (first quoted token, else first token)
-  for /f "tokens=1" %%X in ('echo %BROWSER_CMD%') do (
-    set "BROWSER_EXE=%%~X"
-    if not defined BROWSER_EXE set "BROWSER_EXE=%%X"
-  )
-)
-REM 2) last-resort: StartMenuInternet default (e.g. Firefox/Chrome system-wide)
-if not defined BROWSER_EXE (
-  for /f "tokens=2,*" %%A in ('reg query "HKLM\Software\Clients\StartMenuInternet" /ve 2^>nul') do set "PROGID=%%B"
-  if defined PROGID (
-    for /f "tokens=2,*" %%A in ('reg query "HKLM\Software\Clients\StartMenuInternet\%PROGID%\shell\open\command" /ve 2^>nul') do set "BROWSER_CMD=%%B"
-    for /f "tokens=1" %%X in ('echo %BROWSER_CMD%') do (
-      set "BROWSER_EXE=%%~X"
-      if not defined BROWSER_EXE set "BROWSER_EXE=%%X"
-    )
-  )
-)
+for /f "delims=" %%X in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0resolve_browser.ps1" 2^>nul') do set "BROWSER_EXE=%%X"
+REM guard: drop the value if the file does not actually exist
+if defined BROWSER_EXE if not exist "%BROWSER_EXE%" set "BROWSER_EXE="
 if defined BROWSER_EXE (
   echo [%DATE% %TIME%] default browser: %BROWSER_EXE% >> "%LOG%"
   start "" "%BROWSER_EXE%" --new-window http://127.0.0.1:8770/
