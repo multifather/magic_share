@@ -55,13 +55,28 @@ REM Resolve the default browser EXE from the registry, then open the URL
 REM in a NEW window (so layout.ps1 can catch it as a standalone window,
 REM not a tab in an already-open browser session).
 set "BROWSER_EXE="
+REM 1) UserChoice ProgId -> open command (HKCR or HKCU\Software\Classes)
 for /f "tokens=2,*" %%A in ('reg query "HKCU\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice" /v ProgId 2^>nul') do set "PROGID=%%B"
 if defined PROGID (
   for /f "tokens=2,*" %%A in ('reg query "HKCR\%PROGID%\shell\open\command" /ve 2^>nul') do set "BROWSER_CMD=%%B"
-  REM extract the executable path (first quoted token, or first token)
+  if not defined BROWSER_CMD (
+    for /f "tokens=2,*" %%A in ('reg query "HKCU\Software\Classes\%PROGID%\shell\open\command" /ve 2^>nul') do set "BROWSER_CMD=%%B"
+  )
+  REM extract the executable path (first quoted token, else first token)
   for /f "tokens=1" %%X in ('echo %BROWSER_CMD%') do (
     set "BROWSER_EXE=%%~X"
     if not defined BROWSER_EXE set "BROWSER_EXE=%%X"
+  )
+)
+REM 2) last-resort: StartMenuInternet default (e.g. Firefox/Chrome system-wide)
+if not defined BROWSER_EXE (
+  for /f "tokens=2,*" %%A in ('reg query "HKLM\Software\Clients\StartMenuInternet" /ve 2^>nul') do set "PROGID=%%B"
+  if defined PROGID (
+    for /f "tokens=2,*" %%A in ('reg query "HKLM\Software\Clients\StartMenuInternet\%PROGID%\shell\open\command" /ve 2^>nul') do set "BROWSER_CMD=%%B"
+    for /f "tokens=1" %%X in ('echo %BROWSER_CMD%') do (
+      set "BROWSER_EXE=%%~X"
+      if not defined BROWSER_EXE set "BROWSER_EXE=%%X"
+    )
   )
 )
 if defined BROWSER_EXE (
@@ -75,7 +90,10 @@ if defined BROWSER_EXE (
 REM === 5. arrange windows FIRST (2x2 grid), THEN let generation run ===
 REM layout.ps1 lives in repo root (one level up from script/)
 echo [%DATE% %TIME%] arranging windows (layout.ps1)... >> "%LOG%"
-ping -n 3 127.0.0.1 >nul
+REM give the default browser time to open a NEW window AND paint its
+REM title (must contain 127.0.0.1:8770) so layout.ps1 can catch it
+REM reliably instead of grabbing an unrelated window (e.g. opencode).
+ping -n 8 127.0.0.1 >nul
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0layout.ps1" >> "%LOG%" 2>&1
 
 echo [%DATE% %TIME%] windows placed. Generation proceeds in GEN window. >> "%LOG%"

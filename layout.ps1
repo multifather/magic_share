@@ -49,15 +49,21 @@ $enum = [WinApi+EnumWindowsProc]{
     $cls = New-Object System.Text.StringBuilder 256
     [WinApi]::GetClassName($hwnd, $cls, 256) | Out-Null
     $t = $title.ToString(); $c = $cls.ToString()
+
+    # NEVER grab the agent/opencode window (its title often holds a path/URL)
+    if ($t -match '(?i)opencode|hermes|cursor|terminal|windows terminal|powershell|cmd\.exe') {
+        return $true
+    }
     if ($t.StartsWith("STAT_WATCHER")) { $Script:Found['W'] = $hwnd }
     elseif ($t.StartsWith("STAT_GEN")) { $Script:Found['G'] = $hwnd }
     elseif ($c -eq 'CabinetWClass' -and $t -match 'test_reports') { $Script:Found['E'] = $hwnd }
-    # DEFAULT browser (no hard Firefox dependency): match by URL in title OR
-    # by any known browser window class. Covers Chrome/Edge/Firefox/Opera/brave.
-    # Use -match (regex) so both "127.0.0.1:8770" and "127.0.0.1/8770" titles hit.
-    elseif ($t -match '127\.0\.0\.1[:/]?8770' -or
-            $c -match 'MozillaWindowClass|Chrome_WidgetWin_1|MsEdge_WidgetWin_1|ApplicationFrameWindow|OpWindow') {
+    # BROWSER: PREFER exact URL title (browser always shows 127.0.0.1:8770 once
+    # loaded). Fall back to a known browser window class ONLY if no URL match.
+    elseif ($t -match '127\.0\.0\.1[:/]?8770') {
         if (-not $Script:Found['F']) { $Script:Found['F'] = $hwnd }
+    }
+    elseif (-not $Script:Found['F'] -and ($c -match 'MozillaWindowClass|Chrome_WidgetWin_1|MsEdge_WidgetWin_1|ApplicationFrameWindow|OpWindow')) {
+        $Script:Found['F'] = $hwnd
     }
     return $true
 }
